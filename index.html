@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Christmas Tree (All Blinking Stars)</title>
+<title>Christmas Tree (All Blinking Stars + CN)</title>
 <style>
   body{
     margin:0; min-height:100vh;
@@ -15,7 +15,7 @@
     background:#000;
     padding:18px 22px;
     border-radius:14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    box-shadow:0 10px 30px rgba(0,0,0,.45);
     width:min(760px, 94vw);
   }
   pre{
@@ -25,14 +25,24 @@
     white-space:pre;
     user-select:none;
   }
+
+  /* 树和英文：保持你原本的“紧凑格子” */
   .cell{
     display:inline-block;
-    width:1ch;             /* 你原本的设置：不改树形 */
+    width:1ch;
+    text-align:center;
+  }
+
+  /* ✅ 中文专用：更宽，避免粘在一起 */
+  .cell-cn{
+    display:inline-block;
+    width:2ch;            /* 中文一般 2ch 最稳；想更松可改 2.2ch */
     text-align:center;
   }
 
   .star{ color:#ffd54a; }  /* 顶部星 */
-  /* ✅ 更多颜色（彩虹 8 色） */
+
+  /* ✅ 彩虹 8 色 */
   .r{ color:#ff4d4d; }     /* 红 */
   .b{ color:#4da3ff; }     /* 蓝 */
   .y{ color:#ffd54a; }     /* 黄 */
@@ -56,19 +66,19 @@
 const out = document.getElementById("out");
 
 /* ===== 参数 ===== */
-const H = 14;              // 树高
-const rowSpeed = 70;       // 生长速度
-const blinkSpeed = 220;    // 闪烁速度
-const SEED = 20251225;     // 固定随机（位置稳定）
+const H = 14;
+const rowSpeed = 70;
+const blinkSpeed = 220;
+const SEED = 20251225;
 
 const W = H * 2 + 15;
 const C = Math.floor(W / 2);
-const rows = H + 12;       // ✅ 多留几行给中文
+const rows = H + 12;
 
 const blank = `<span class="cell">&nbsp;</span>`;
 let grid = Array.from({length: rows}, () => Array.from({length: W}, () => blank));
 
-/* 固定随机 */
+/* 固定随机（初始颜色稳定） */
 function mulberry32(a){
   return function(){
     let t = a += 0x6D2B79F5;
@@ -79,12 +89,11 @@ function mulberry32(a){
 }
 const rnd = mulberry32(SEED);
 
-/* ✅ 更多颜色池 */
+/* 彩虹颜色池 */
 const colors = ["r","b","y","w","g","p","c","o"];
 const randColor = () => colors[Math.floor(Math.random() * colors.length)];
 const fixedColor = () => colors[Math.floor(rnd() * colors.length)];
 
-/* 所有星星都放这里 */
 const stars = [];
 
 function put(x,y,html){
@@ -98,7 +107,7 @@ function render(){
 /* 树顶星 */
 put(C, 0, `<span class="cell star">★</span>`);
 
-/* 生成整棵树：每一个位置都是星星（保持你原本效果） */
+/* 整棵树：每一个位置都是星星（保持你原本效果） */
 const layers = [];
 for (let i=0;i<H;i++){
   const y = i+1;
@@ -106,7 +115,7 @@ for (let i=0;i<H;i++){
   const right = C+i;
   const row = [];
   for (let x=left;x<=right;x++){
-    row.push({x,y,cls: fixedColor()});  // ✅ 初始颜色稳定
+    row.push({x,y,cls: fixedColor()});
   }
   layers.push(row);
 }
@@ -119,30 +128,31 @@ const grow = setInterval(()=>{
 
     /* 树干：2×3 */
     const ty = H+1;
-    const trunk = [
+    [
       [C-1,ty],[C,ty],
       [C-1,ty+1],[C,ty+1],
       [C-1,ty+2],[C,ty+2],
-    ];
-    trunk.forEach(([x,y])=>{
+    ].forEach(([x,y])=>{
       put(x,y,`<span class="cell trunk">█</span>`);
     });
 
     /* 第一行英文（保留） */
-    const msg1 = "Merry Chrismas!";
+    const msg1 = "Merry  Christmas!";
     const sx1 = C - Math.floor(msg1.length/2);
     const y1 = ty + 4;
     for (let i=0;i<msg1.length;i++){
-      const ch = msg1[i]===" "?"&nbsp;":msg1[i];
-      put(sx1+i,y1,`<span class="cell msg">${ch}</span>`);
+      const ch = msg1[i]===" " ? "&nbsp;" : msg1[i];
+      put(sx1+i, y1, `<span class="cell msg">${ch}</span>`);
     }
 
     render();
 
-    /* ✅ 第二行中文：打字出现 */
-    const msg2 = "祝 你 圣 诞 快 乐 小 柔 希 望 你 看 到 这 个 树 会 开 心！";
-    const sx2 = C - Math.floor(msg2.length/2);
+    /* ✅ 第二行中文：不粘 + 打字出现 + 居中更准 */
+    const msg2 = "祝小柔圣诞快乐愿你幸福快乐QwQ";
     const y2 = y1 + 2;
+
+    // 中文每个字约等于 2 格宽，所以起点用 length 来居中
+    const sx2 = C - msg2.length;
 
     let k = 0;
     const typer = setInterval(()=>{
@@ -150,17 +160,17 @@ const grow = setInterval(()=>{
         clearInterval(typer);
         return;
       }
-      put(sx2 + k, y2, `<span class="cell msg">${msg2[k]}</span>`);
+      put(sx2 + k, y2, `<span class="cell-cn msg">${msg2[k]}</span>`);
       render();
       k++;
     }, 180);
 
-    /* ⭐ 全树星星一起闪：更多颜色 + 明暗 */
+    /* 全树闪烁：彩虹 + 明暗 */
     setInterval(()=>{
       for (const s of stars){
         s.cls = randColor();
         const glow = Math.random() < 0.5 ? "bright" : "dim";
-        put(s.x,s.y,`<span class="cell ${s.cls} ${glow}">★</span>`);
+        put(s.x, s.y, `<span class="cell ${s.cls} ${glow}">★</span>`);
       }
       render();
     }, blinkSpeed);
